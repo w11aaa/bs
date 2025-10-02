@@ -6,7 +6,7 @@
           <h1>互联网课堂考勤系统 - 管理员端</h1>
           <el-dropdown>
             <span class="user-info">
-              {{ user.name }} <el-icon><arrow-down /></el-icon>
+              {{ user.name }} <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -26,23 +26,23 @@
             :unique-opened="true"
           >
             <el-menu-item index="/admin/dashboard">
-              <el-icon><home /></el-icon>
+              <el-icon><Home /></el-icon>
               <span>仪表板</span>
             </el-menu-item>
             <el-menu-item index="/admin/students">
-              <el-icon><user /></el-icon>
+              <el-icon><User /></el-icon>
               <span>学生管理</span>
             </el-menu-item>
             <el-menu-item index="/admin/teachers">
-              <el-icon><avatar /></el-icon>
+              <el-icon><Avatar /></el-icon>
               <span>教师管理</span>
             </el-menu-item>
             <el-menu-item index="/admin/courses">
-              <el-icon><document /></el-icon>
+              <el-icon><Document /></el-icon>
               <span>课程管理</span>
             </el-menu-item>
             <el-menu-item index="/admin/attendance">
-              <el-icon><timer /></el-icon>
+              <el-icon><Timer /></el-icon>
               <span>考勤统计</span>
             </el-menu-item>
           </el-menu>
@@ -157,17 +157,12 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../../router'
-import { Home, User, Avatar, Document, Timer, ArrowDown } from '@element-plus/icons-vue'
+// Element Plus 2.0+ 中图标已集成，不需要单独导入
 
 export default {
   name: 'AdminDashboard',
   components: {
-    Home,
-    User,
-    Avatar,
-    Document,
-    Timer,
-    ArrowDown
+    // 图标不需要在这里注册，Element Plus 2.0+ 直接使用 <el-icon><组件名 /></el-icon>
   },
   data() {
     return {

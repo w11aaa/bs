@@ -22,6 +22,9 @@
         <el-form-item>
           <el-button @click="toRegister" style="width: 100%">注册(学生)</el-button>
         </el-form-item>
+        <el-form-item>
+          <el-button @click="fillTestCredentials" type="info" style="width: 100%">填充测试凭据</el-button>
+        </el-form-item>
       </el-form>
     </div>
   </div>
@@ -56,99 +59,107 @@ export default {
   },
   methods: {
     async login() {
-      console.log('Login method called')
       try {
-        // 表单验证
-        console.log('Attempting form validation')
-        await this.$refs.loginFormRef.validate()
-        console.log('Form validation passed')
+        // 1. 表单验证
+        console.log('开始登录验证');
+        await this.$refs.loginFormRef.validate();
+        console.log('表单验证通过');
         
-        console.log('Login form data:', this.loginForm)
-        
-        // 创建一个新对象，确保只发送必要的字段
         const loginData = {
           username: this.loginForm.username,
           password: this.loginForm.password,
           user_type: this.loginForm.user_type
         }
+        console.log('准备发送登录请求:', loginData);
         
-        console.log('Sending login request to:', 'http://127.0.0.1:5000/auth/login')
-        console.log('Login request data:', loginData)
+        // 使用绝对URL直接访问后端API，绕过可能有问题的代理配置
+        const directAxios = axios.create({
+            // 确保不使用全局baseURL
+            baseURL: ''
+        });
         
-        const response = await axios.post('http://127.0.0.1:5000/auth/login', loginData, {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          withCredentials: true // 确保跨域请求携带凭证
-        })
+        // 发送登录请求到后端API
+        const response = await directAxios.post('http://127.0.0.1:5000/auth/login', loginData);
+        console.log('登录请求返回响应:', response);
         
-        console.log('Login response received:', response)
-        console.log('Response status:', response.status)
-        console.log('Response data:', response.data)
+        // 从响应中获取数据部分（因为新创建的axios实例没有应用响应拦截器）
+        const result = response.data;
+        console.log('登录请求返回数据:', result);
         
-        // 无论响应结构如何，只要状态码是200就认为登录成功
-        if (response.status === 200) {
-          // 保存用户信息，确保包含role字段以匹配权限控制要求
-          const userData = {
-            ...(response.data || {}),
-            ...(response.data.user || {}), // 兼容后端可能返回的嵌套user对象
-            role: this.loginForm.user_type
-          }
-          console.log('Prepared user data for storage:', userData)
-          
+        // 3. 检查返回的数据内容
+        if (result && result.message === '登录成功' && result.user) {
+          // 4. 存储从后端获取的干净的用户信息
           try {
-            localStorage.setItem('user', JSON.stringify(userData))
-            console.log('User data saved to localStorage successfully')
-            console.log('Current localStorage user:', localStorage.getItem('user'))
+            localStorage.setItem('user', JSON.stringify(result.user));
+            console.log('用户信息已存储到localStorage:', result.user);
           } catch (storageError) {
-            console.error('Error saving to localStorage:', storageError)
+            console.error('localStorage存储失败:', storageError);
           }
           
-          ElMessage.success('登录成功')
+          // 添加更明显的成功提示
+          const successMsg = '登录成功！用户：' + result.user.username + '，角色：' + result.user.role;
+          console.log(successMsg);
+          ElMessage.success(successMsg);
           
-          // 延迟一点再跳转，确保localStorage保存完成
+          // 5. 根据后端返回的角色进行跳转，更安全
+          const targetPath = `/${result.user.role}/dashboard`;
+          console.log('准备跳转到:', targetPath);
+          
+          // 使用setTimeout确保localStorage保存完成，并使用try-catch捕获可能的路由错误
           setTimeout(() => {
-            // 根据角色跳转到不同页面
-            const targetPath = '/' + this.loginForm.user_type + '/dashboard'
-            console.log('Attempting to navigate to:', targetPath)
             try {
-              // 尝试使用绝对路径跳转
-              router.push({ path: targetPath })
-              console.log('Navigation command executed')
-            } catch (navError) {
-              console.error('Navigation error:', navError)
-              // 如果路由跳转失败，直接修改location
-              console.log('Falling back to window.location.href')
-              window.location.href = targetPath
+              router.push(targetPath);
+              console.log('路由跳转已执行');
+            } catch (routerError) {
+              console.error('路由跳转失败:', routerError);
+              // 备用方案：使用window.location.href
+              window.location.href = targetPath;
+              console.log('备用跳转方案已执行');
             }
-          }, 100)
+          }, 100);
+
         } else {
-          console.warn('Login response status not 200:', response.status)
-          ElMessage.error(response.data?.message || '登录失败')
+          console.error('登录失败，返回数据格式不正确:', JSON.stringify(result));
+          // 更详细地检查结果对象的属性
+          console.error('Result object keys:', result ? Object.keys(result) : 'No result object');
+          // 优先显示后端返回的错误信息，保持与外层错误处理一致
+          const errorMsg = result?.message || '登录失败，返回数据格式不正确';
+          console.error('详细错误信息:', errorMsg);
+          ElMessage.error(errorMsg);
         }
       } catch (error) {
-        console.error('=== Login Error Started ===')
-        console.error('Error object type:', typeof error)
-        console.error('Error object:', error)
-        if (error.response) {
-          console.error('Error response status:', error.response.status)
-          console.error('Error response data:', error.response.data)
-          console.error('Error response headers:', error.response.headers)
-        } else if (error.request) {
-          console.error('No response received:', error.request)
-        } else {
-          console.error('Error message:', error.message)
-        }
-        console.error('Error config:', error.config)
-        console.error('=== Login Error Ended ===')
+        console.error('Login Error:', error);
+        console.error('Error type:', typeof error);
+        console.error('Error object keys:', Object.keys(error || {}));
+        console.error('Error response:', error?.response || 'No response');
+        console.error('Error request:', error?.request || 'No request');
         
-        const errorMessage = error.response?.data?.message || '登录失败，请重试'
-        console.error('Displaying error message:', errorMessage)
-        ElMessage.error(errorMessage)
+        // 优先显示后端返回的错误信息
+        let errorMessage;
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', JSON.stringify(error.response.data));
+          errorMessage = error.response.data?.message || `后端返回错误: ${error.response.status}`;
+        } else if (error.request) {
+          console.error('No response received from server');
+          errorMessage = '服务器无响应，请检查网络连接';
+        } else {
+          console.error('Request setup error:', error.message);
+          errorMessage = `请求错误: ${error.message}`;
+        }
+        
+        ElMessage.error(errorMessage);
       }
     },
     toRegister() {
       router.push('/register')
+    },
+    fillTestCredentials() {
+      // 默认管理员凭据
+      this.loginForm.username = 'admin';
+      this.loginForm.password = 'admin123';
+      this.loginForm.user_type = 'admin';
+      ElMessage.info('已填充管理员测试凭据');
     }
   }
 }

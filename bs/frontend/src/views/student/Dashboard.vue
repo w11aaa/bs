@@ -6,7 +6,7 @@
           <h1>互联网课堂考勤系统 - 学生端</h1>
           <el-dropdown>
             <span class="user-info">
-              {{ user.name }} <el-icon><arrow-down /></el-icon>
+              {{ user.name }} <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -27,19 +27,19 @@
             :unique-opened="true"
           >
             <el-menu-item index="/student/dashboard">
-              <el-icon><home /></el-icon>
+              <el-icon><Home /></el-icon>
               <span>仪表板</span>
             </el-menu-item>
             <el-menu-item index="/student/courses">
-              <el-icon><document /></el-icon>
+              <el-icon><Document /></el-icon>
               <span>我的课程</span>
             </el-menu-item>
             <el-menu-item index="/student/attendance">
-              <el-icon><timer /></el-icon>
+              <el-icon><Timer /></el-icon>
               <span>考勤记录</span>
             </el-menu-item>
             <el-menu-item index="/student/profile">
-              <el-icon><user /></el-icon>
+              <el-icon><User /></el-icon>
               <span>个人资料</span>
             </el-menu-item>
           </el-menu>
@@ -115,18 +115,12 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../../router'
-import { Home, Document, Timer, User, ArrowDown, Check, Warning } from '@element-plus/icons-vue'
+// Element Plus 2.0+ 中图标已集成，不需要单独导入
 
 export default {
   name: 'StudentDashboard',
   components: {
-    Home,
-    Document,
-    Timer,
-    User,
-    ArrowDown,
-    Check,
-    Warning
+    // 图标不需要在这里注册，Element Plus 2.0+ 直接使用 <el-icon><组件名 /></el-icon>
   },
   data() {
     return {
@@ -149,19 +143,17 @@ export default {
       try {
         // 获取课程数量
         const coursesRes = await axios.get('/student/courses')
-        if (coursesRes.success) {
-          this.courseCount = coursesRes.data.length
-        }
+        this.courseCount = coursesRes.data?.length || 0
         
         // 获取考勤统计
         const statsRes = await axios.get('/student/attendance/stats')
-        if (statsRes.success) {
+        if (statsRes.data) {
           this.attendanceStats = statsRes.data
         }
         
         // 获取最近考勤记录
-        const attendanceRes = await axios.get('/student/attendance?limit=5')
-        if (attendanceRes.success) {
+        const attendanceRes = await axios.get('/student/attendance/recent?limit=5')
+        if (attendanceRes.data) {
           this.recentAttendance = attendanceRes.data
         }
       } catch (error) {

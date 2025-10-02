@@ -30,6 +30,7 @@ axios.interceptors.request.use(
 // 响应拦截器
 axios.interceptors.response.use(
   response => {
+    // 直接返回后端API响应的数据部分
     return response.data
   },
   error => {
